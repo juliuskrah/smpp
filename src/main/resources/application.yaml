@@ -1,0 +1,6 @@
+sms:
+  smpp:
+    host: 
+    user-id: 
+    password: 
+    requestDelivery: true
