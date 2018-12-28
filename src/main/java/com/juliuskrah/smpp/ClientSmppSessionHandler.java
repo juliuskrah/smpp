@@ -4,6 +4,9 @@ import java.time.ZoneOffset;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ApplicationEventPublisherAware;
+import org.springframework.stereotype.Component;
 
 import com.cloudhopper.commons.charset.CharsetUtil;
 import com.cloudhopper.smpp.SmppConstants;
@@ -13,9 +16,10 @@ import com.cloudhopper.smpp.pdu.PduRequest;
 import com.cloudhopper.smpp.pdu.PduResponse;
 import com.cloudhopper.smpp.util.SmppUtil;
 
-public class ClientSmppSessionHandler extends DefaultSmppSessionHandler {
+@Component
+public class ClientSmppSessionHandler extends DefaultSmppSessionHandler implements ApplicationEventPublisherAware {
 	private static final Logger log = LoggerFactory.getLogger(ClientSmppSessionHandler.class);
-//	private ApplicationEventPublisher publisher;
+	private ApplicationEventPublisher publisher;
 	private final ApplicationProperties properties;
 
 	public ClientSmppSessionHandler(ApplicationProperties properties) {
@@ -31,6 +35,11 @@ public class ClientSmppSessionHandler extends DefaultSmppSessionHandler {
 		default:
 			return CharsetUtil.NAME_GSM;
 		}
+	}
+
+	@Override
+	public void setApplicationEventPublisher(ApplicationEventPublisher publisher) {
+		this.publisher = publisher;
 	}
 
 	@Override
@@ -65,5 +74,11 @@ public class ClientSmppSessionHandler extends DefaultSmppSessionHandler {
 			response.setCommandStatus(SmppConstants.STATUS_UNKNOWNERR);
 		}
 		return response;
+	}
+
+	@Override
+	public void fireChannelUnexpectedlyClosed() {
+		log.warn("SMPP session channel unexpectedly closed");
+		publisher.publishEvent(new SessionDisconnectedEvent(this));
 	}
 }
