@@ -4,3 +4,5 @@ sms:
     user-id: 
     password: 
     requestDelivery: true
+  async:
+    initial-delay: 30000

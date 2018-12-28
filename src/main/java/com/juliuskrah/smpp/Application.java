@@ -4,11 +4,14 @@ import java.util.concurrent.Executors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 
 import com.cloudhopper.commons.charset.CharsetUtil;
 import com.cloudhopper.smpp.SmppBindType;
@@ -17,6 +20,8 @@ import com.cloudhopper.smpp.SmppConstants;
 import com.cloudhopper.smpp.SmppSession;
 import com.cloudhopper.smpp.SmppSessionConfiguration;
 import com.cloudhopper.smpp.impl.DefaultSmppClient;
+import com.cloudhopper.smpp.pdu.EnquireLink;
+import com.cloudhopper.smpp.pdu.EnquireLinkResp;
 import com.cloudhopper.smpp.pdu.SubmitSm;
 import com.cloudhopper.smpp.pdu.SubmitSmResp;
 import com.cloudhopper.smpp.tlv.Tlv;
@@ -27,15 +32,20 @@ import com.cloudhopper.smpp.type.SmppChannelException;
 import com.cloudhopper.smpp.type.SmppTimeoutException;
 import com.cloudhopper.smpp.type.UnrecoverablePduException;
 
+@EnableScheduling
 @SpringBootApplication
 @EnableConfigurationProperties(ApplicationProperties.class)
 public class Application {
 	private static final Logger log = LoggerFactory.getLogger(Application.class);
+	@Autowired
+	private SmppSession session;
+	@Autowired
+	private ApplicationProperties properties;
 
 	public static void main(String[] args) {
 		ConfigurableApplicationContext ctx = SpringApplication.run(Application.class, args);
 		SmppSession session = ctx.getBean(SmppSession.class);
-		new Application().sendTextMessage(session, "3299", "Hello World", "233265018733");
+		new Application().sendTextMessage(session, "3299", "Hello World", "<replace>");
 	}
 
 	public SmppSessionConfiguration sessionConfiguration(ApplicationProperties properties) {
@@ -58,13 +68,13 @@ public class Application {
 	public SmppSession session(ApplicationProperties properties) throws SmppBindException, SmppTimeoutException,
 			SmppChannelException, UnrecoverablePduException, InterruptedException {
 		SmppSessionConfiguration config = sessionConfiguration(properties);
-		SmppSession session = clientBootstrap().bind(config, new ClientSmppSessionHandler(properties));
+		SmppSession session = clientBootstrap(properties).bind(config, new ClientSmppSessionHandler(properties));
 
 		return session;
 	}
 
-	public SmppClient clientBootstrap() {
-		return new DefaultSmppClient(Executors.newCachedThreadPool(), 2);
+	public SmppClient clientBootstrap(ApplicationProperties properties) {
+		return new DefaultSmppClient(Executors.newCachedThreadPool(), properties.getAsync().getSmppSessionSize());
 	}
 
 	private void sendTextMessage(SmppSession session, String sourceAddress, String message, String destinationAddress) {
@@ -101,5 +111,29 @@ public class Application {
 			return;
 		}
 		throw new IllegalStateException("SMPP session is not connected");
+	}
+
+	@Scheduled(initialDelayString = "${sms.async.initial-delay}", fixedDelayString = "${sms.async.initial-delay}")
+	void enquireLinkJob() {
+		if (session.isBound()) {
+			try {
+				log.info("sending enquire_link");
+				EnquireLinkResp enquireLinkResp = session.enquireLink(new EnquireLink(),
+						properties.getAsync().getTimeout());
+				log.info("enquire_link_resp: {}", enquireLinkResp);
+			} catch (SmppTimeoutException e) {
+				log.info("Enquire link failed, executing reconnect; " + e);
+				log.error("", e);
+			} catch (SmppChannelException e) {
+				log.info("Enquire link failed, executing reconnect; " + e);
+				log.warn("", e);
+			} catch (InterruptedException e) {
+				log.info("Enquire link interrupted, probably killed by reconnecting");
+			} catch (Exception e) {
+				log.error("Enquire link failed, executing reconnect", e);
+			}
+		} else {
+			log.error("enquire link running while session is not connected");
+		}
 	}
 }
