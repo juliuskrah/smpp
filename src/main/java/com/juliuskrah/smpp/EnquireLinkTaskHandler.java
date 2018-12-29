@@ -75,7 +75,7 @@ public class EnquireLinkTaskHandler implements ApplicationContextAware, Applicat
 	private void initSession() throws SmppBindException, SmppTimeoutException, SmppChannelException,
 			UnrecoverablePduException, InterruptedException {
 		ClientSmppSessionHandler sessionHandler = ctx.getBean(ClientSmppSessionHandler.class);
-		SmppSession session = clientBootstrap.bind(new Application().sessionConfiguration(properties), sessionHandler);
+		SmppSession session = clientBootstrap.bind(Application.sessionConfiguration(properties), sessionHandler);
 		SmppSessionDelegate.setSession(session);
 		log.debug("Connection succeeded");
 	}
@@ -87,7 +87,7 @@ public class EnquireLinkTaskHandler implements ApplicationContextAware, Applicat
 		ClientSmppSessionHandler sessionHandler = ctx.getBean(ClientSmppSessionHandler.class);
 		SmppSessionDelegate.destroySession();
 		try {
-			SmppSession session = clientBootstrap.bind(new Application().sessionConfiguration(properties),
+			SmppSession session = clientBootstrap.bind(Application.sessionConfiguration(properties),
 					sessionHandler);
 			SmppSessionDelegate.setSession(session);
 			log.debug("Connection succeeded");

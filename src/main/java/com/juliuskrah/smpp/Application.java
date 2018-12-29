@@ -37,7 +37,7 @@ public class Application {
 		new Application().sendTextMessage("3299", "Hello World", "<replace>");
 	}
 
-	public SmppSessionConfiguration sessionConfiguration(ApplicationProperties properties) {
+	public static SmppSessionConfiguration sessionConfiguration(ApplicationProperties properties) {
 		SmppSessionConfiguration sessionConfig = new SmppSessionConfiguration();
 		sessionConfig.setName("smpp.session");
 		sessionConfig.setInterfaceVersion(SmppConstants.VERSION_3_4);
