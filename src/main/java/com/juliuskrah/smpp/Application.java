@@ -8,6 +8,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import com.cloudhopper.commons.charset.CharsetUtil;
@@ -26,6 +27,7 @@ import com.cloudhopper.smpp.type.SmppChannelException;
 import com.cloudhopper.smpp.type.SmppTimeoutException;
 import com.cloudhopper.smpp.type.UnrecoverablePduException;
 
+@EnableAsync
 @EnableScheduling
 @SpringBootApplication
 @EnableConfigurationProperties(ApplicationProperties.class)
@@ -34,7 +36,7 @@ public class Application {
 
 	public static void main(String[] args) {
 		SpringApplication.run(Application.class, args);
-		new Application().sendTextMessage("3299", "Hello World", "<replace>");
+		sendTextMessage("3299", "Hello World", "<replace>");
 	}
 
 	public static SmppSessionConfiguration sessionConfiguration(ApplicationProperties properties) {
@@ -58,7 +60,7 @@ public class Application {
 		return new DefaultSmppClient(Executors.newCachedThreadPool(), properties.getAsync().getSmppSessionSize());
 	}
 
-	private void sendTextMessage(String sourceAddress, String message, String destinationAddress) {
+	private static void sendTextMessage(String sourceAddress, String message, String destinationAddress) {
 		SmppSession session = SmppSessionDelegate.getSession();
 		if (session != null && session.isBound()) {
 			try {
