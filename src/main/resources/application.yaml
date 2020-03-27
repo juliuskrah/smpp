@@ -1,8 +1,22 @@
-sms:
-  smpp:
-    host: 
-    user-id: 
-    password: 
-    requestDelivery: true
-  async:
-    initial-delay: 30000
+camel:
+  component:
+    enabled: true
+    smpp:
+      configuration:
+        host: <smpp.host>
+        password: <password>
+        system-id: <user>
+        source-addr-ton: 0x05
+        source-addr-npi: 0x01
+        dest-addr-npi: 0x01
+        dest-addr-ton: 0x01
+        registered-delivery: 1
+    bean:
+      scope: singleton
+  springboot:
+    name: smpp-app
+    main-run-controller: false
+logging:
+  level:
+    org.apache.camel.component.smpp.SmppSubmitSmCommand: debug
+    org.apache.camel.component.smpp.MessageReceiverListenerImpl: debug
