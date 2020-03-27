@@ -12,6 +12,6 @@ public class MessageRoute extends RouteBuilder {
     @Override
     public void configure() throws Exception {
         from("smpp://{{camel.component.smpp.configuration.host}}") //
-                .to("bean:messageReceiver??method=receive");
+                .to("bean:messageReceiver?method=receive");
     }   
 }
