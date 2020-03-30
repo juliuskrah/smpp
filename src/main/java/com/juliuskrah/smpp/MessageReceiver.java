@@ -11,24 +11,26 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
- * MessageReceiver
+ * Message receiver bean that log delivery receipts received
+ * 
+ * @author Julius Krah
  */
 @Component
 public class MessageReceiver {
-    private final static Logger log = LoggerFactory.getLogger(MessageReceiver.class);
+    private final static Logger logger = LoggerFactory.getLogger(MessageReceiver.class);
 
     public void receive(Exchange exchange) {
         if (exchange.getException() == null) {
             var message = exchange.getIn();
-            log.info("Received id {}", message.getHeader("CamelSmppId"));
-            log.info("Text :- {}", message.getBody());
-            log.info("Total delivered {}", message.getHeader("CamelSmppDelivered"));
-            log.info("Message status {}", message.getHeader("CamelSmppStatus"));
-            log.info("Submitted date {}", asLocalDateTime(message //
+            logger.info("Received id {}", message.getHeader("CamelSmppId"));
+            logger.info("Text :- {}", message.getBody());
+            logger.info("Total delivered {}", message.getHeader("CamelSmppDelivered"));
+            logger.info("Message status {}", message.getHeader("CamelSmppStatus"));
+            logger.info("Submitted date {}", asLocalDateTime(message //
                     .getHeader("CamelSmppSubmitDate", Date.class)));
-            log.info("Done date {}", asLocalDateTime(message.getHeader("CamelSmppDoneDate", Date.class)));
+            logger.info("Done date {}", asLocalDateTime(message.getHeader("CamelSmppDoneDate", Date.class)));
         } else
-            log.error("Error receiving message", exchange.getException());
+            logger.error("Error receiving message", exchange.getException());
     }
 
     private static LocalDateTime asLocalDateTime(Date date) {

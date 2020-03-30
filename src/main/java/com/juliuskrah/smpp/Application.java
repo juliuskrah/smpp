@@ -14,10 +14,14 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-
+/**
+ * 
+ * @author Julius Krah
+ *
+ */
 @SpringBootApplication
 public class Application {
-	private static final Logger log = LoggerFactory.getLogger(Application.class);
+	private static final Logger logger = LoggerFactory.getLogger(Application.class);
 	@Autowired
 	private CamelContext context;
 
@@ -45,9 +49,9 @@ public class Application {
 		return args -> {
 			var exchange = sendTextMessage(template, "5432", "<telephone number>", "Hello World!");
 			if (exchange.getException() == null)
-				log.info("Message Id - {}", exchange.getMessage().getHeader("CamelSmppId"));
+				logger.info("Message Id - {}", exchange.getMessage().getHeader("CamelSmppId"));
 			else
-				log.error("Could not send message", exchange.getException());
+				logger.error("Could not send message", exchange.getException());
 		};
 	}
 	//#endregion

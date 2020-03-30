@@ -4,7 +4,9 @@ import org.apache.camel.builder.RouteBuilder;
 import org.springframework.stereotype.Component;
 
 /**
- * MessageRoute
+ * Router to route messages from SMSC to bean class
+ * 
+ * @author Julius Krah
  */
 @Component
 public class MessageRoute extends RouteBuilder {
