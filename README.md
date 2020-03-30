@@ -27,7 +27,7 @@ public class MessageReceiver {
             log.info("Submitted date {}", asLocalDateTime(message
                     .getHeader(SmppConstants.SUBMIT_DATE, Date.class)));
             log.info("Done date {}", asLocalDateTime(message
-                    .getHeader(SmppConstants.SUBMIT_DATE, Date.class)));
+                    .getHeader(SmppConstants.DONE_DATE, Date.class)));
         } else
             log.error("Error receiving message", exchange.getException());
     }
@@ -97,11 +97,11 @@ Make a POST request request to `http://127.0.0.1:8080/messages` with sample payl
 
 `type` is the message type enum:
 
-- 0: SUBMIT_SM
-- 1: REPLACE_SM
-- 2: QUERY_SM
-- 3: CANCEL_SM
-- 4: DATA_SHORT_MESSAGE
+- 0: `SUBMIT_SM`
+- 1: `REPLACE_SM`
+- 2: `QUERY_SM`
+- 3: `CANCEL_SM`
+- 4: `DATA_SHORT_MESSAGE`
 
 ```java
 @RestController

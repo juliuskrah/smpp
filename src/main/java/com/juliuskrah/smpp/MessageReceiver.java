@@ -30,7 +30,7 @@ public class MessageReceiver {
 			log.info("Submitted date {}", asLocalDateTime(message //
 					.getHeader(SmppConstants.SUBMIT_DATE, Date.class)));
 			log.info("Done date {}", asLocalDateTime(message //
-					.getHeader(SmppConstants.SUBMIT_DATE, Date.class)));
+					.getHeader(SmppConstants.DONE_DATE, Date.class)));
 		} else
 			log.error("Error receiving message", exchange.getException());
 	}
