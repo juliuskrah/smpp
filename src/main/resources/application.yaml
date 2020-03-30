@@ -3,9 +3,10 @@ camel:
     enabled: true
     smpp:
       configuration:
-        host: <smpp.host>
-        password: <password>
-        system-id: <user>
+        host: <host.smpp>
+        system-id: <user-id>
+        password: <secret>
+        source-addr: 5432
         source-addr-ton: 0x05
         source-addr-npi: 0x01
         dest-addr-npi: 0x01

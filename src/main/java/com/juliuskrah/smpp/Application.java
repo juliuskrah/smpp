@@ -1,19 +1,16 @@
 package com.juliuskrah.smpp;
 
-import java.util.List;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
-import org.apache.camel.CamelContext;
-import org.apache.camel.Exchange;
-import org.apache.camel.ExchangePattern;
-import org.apache.camel.ProducerTemplate;
-import org.apache.camel.builder.ExchangeBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Bean;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.lang.Nullable;
+
+import com.juliuskrah.smpp.utilities.StringUtils;
+
 /**
  * 
  * @author Julius Krah
@@ -21,38 +18,38 @@ import org.springframework.context.annotation.Bean;
  */
 @SpringBootApplication
 public class Application {
-	private static final Logger logger = LoggerFactory.getLogger(Application.class);
-	@Autowired
-	private CamelContext context;
 
 	public static void main(String[] args) {
 		SpringApplication.run(Application.class, args);
 	}
 
-	//#region
-	private Exchange sendTextMessage(ProducerTemplate template, String sourceAddress, //
-			String destinationAddress, String message) {
-		var exchange = ExchangeBuilder.anExchange(context) //
-				.withHeader("CamelSmppDestAddr", List.of(destinationAddress)) //
-				.withHeader("CamelSmppSourceAddr", sourceAddress) //
-				.withPattern(ExchangePattern.InOnly) //
-				.withBody(message).build();
-		// exceptions are not thrown from this method
-		// exceptions are stored in Exchange#setException()
-		return template.send("smpp://{{camel.component.smpp.configuration.host}}", exchange);
+	/**
+	 * Creates a UUID from raw string without dashes
+	 * @param raw UUID without dashes
+	 * @return
+	 */
+	public static java.util.UUID toUUID(String raw) {
+		StringUtils.notBlank(raw, "'raw' cannot be empty");
+		StringUtils.hasRequiredLength(raw, 32, "'raw' must be of length 32");
+		return java.util.UUID.fromString( //
+				raw.replaceFirst( //
+						"(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)", //
+						"$1-$2-$3-$4-$5"));
 	}
-	//#endregion
 
-	//#region
-	@Bean
-	CommandLineRunner init(ProducerTemplate template) {
-		return args -> {
-			var exchange = sendTextMessage(template, "5432", "<telephone number>", "Hello World!");
-			if (exchange.getException() == null)
-				logger.info("Message Id - {}", exchange.getMessage().getHeader("CamelSmppId"));
-			else
-				logger.error("Could not send message", exchange.getException());
-		};
+	@Nullable
+	public static ZonedDateTime toZonedDateTime(LocalDateTime dateTime) {
+		if (dateTime == null)
+			return null;
+		var timeZone = LocaleContextHolder.getTimeZone();
+		return dateTime.atZone(timeZone.toZoneId());
 	}
-	//#endregion
+
+	@Nullable
+	public static LocalDateTime toLocalDateTime(Instant instant) {
+		if (instant == null)
+			return null;
+		var timeZone = LocaleContextHolder.getTimeZone();
+		return LocalDateTime.ofInstant(instant, timeZone.toZoneId());
+	}
 }

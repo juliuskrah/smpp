@@ -14,28 +14,41 @@ The message receiver is used to process the messages received:
 ```java
 @Component
 public class MessageReceiver {
+
     private final static Logger log = LoggerFactory.getLogger(MessageReceiver.class);
 
-    public void receive(Exchange exchange) {
+    public void receiveDeliveryReceipt(Exchange exchange) {
         if (exchange.getException() == null) {
             var message = exchange.getIn();
-            log.info("Received id {}", message.getHeader("CamelSmppId"));
+            log.info("Received id {}", message.getHeader(SmppConstants.ID));
             log.info("Text :- {}", message.getBody());
-            log.info("Total delivered {}", message.getHeader("CamelSmppDelivered"));
-            log.info("Message status {}", message.getHeader("CamelSmppStatus"));
-            log.info("Submitted date {}", asLocalDateTime(message //
-                    .getHeader("CamelSmppSubmitDate", Date.class)));
-            log.info("Done date {}", asLocalDateTime(message.getHeader("CamelSmppDoneDate", Date.class)));
+            log.info("Total delivered {}", message.getHeader(SmppConstants.DELIVERED));
+            log.info("Message status {}", message.getHeader(SmppConstants.FINAL_STATUS));
+            log.info("Submitted date {}", asLocalDateTime(message
+                    .getHeader(SmppConstants.SUBMIT_DATE, Date.class)));
+            log.info("Done date {}", asLocalDateTime(message
+                    .getHeader(SmppConstants.SUBMIT_DATE, Date.class)));
         } else
             log.error("Error receiving message", exchange.getException());
+    }
+
+    public void receiveDeliverSm(Exchange exchange) {
+        // TODO
+        log.info("receive deliver sm {}", exchange);
+    }
+
+    public void fallback(Exchange exchange) {
+        // TODO
+        log.info("receive fallback sm {}", exchange);
     }
 
     private static LocalDateTime asLocalDateTime(Date date) {
         if (date == null)
             return null;
-        return Instant.ofEpochMilli(date.getTime()) //
+        return Instant.ofEpochMilli(date.getTime())
                 .atZone(ZoneId.systemDefault()).toLocalDateTime();
     }
+
 }
 ```
 
@@ -47,39 +60,69 @@ public class MessageRoute extends RouteBuilder {
 
     @Override
     public void configure() throws Exception {
-        from("smpp://{{camel.component.smpp.configuration.host}}") //
-                .to("bean:messageReceiver?method=receive");
+        from("smpp://{{camel.component.smpp.configuration.host}}")
+            .doTry()
+                .choice()
+                    .when(header(SmppConstants.MESSAGE_TYPE).isEqualTo((DeliveryReceipt.toString())))
+                        .bean("messageReceiver", "receiveDeliveryReceipt")
+                    .when(header(SmppConstants.MESSAGE_TYPE).isEqualTo((DeliverSm.toString())))
+                        .bean("messageReceiver", "receiveDeliverSm")
+                    .otherwise()
+                        .bean("messageReceiver", "fallback")
+                .endChoice()
+            .endDoTry()
+            .doCatch(Exception.class)
+                .throwException(new ProcessRequestException("update of sms state failed", 100))
+            .end();
     }
 }
 ```
 
 ## Implementation to send SMS
 
-I am using the `ProducerTemplate` to send SMS messages
+Make a POST request request to `http://127.0.0.1:8080/messages` with sample payload:
+
+```json
+{
+    "type": 0, // 0, 1, 2, 3, or 4
+    "from": "3306", // Optional
+    "messageId": "d2dd9955e7344d409c255a488d37718c", // Required when type is 1, 2, or 3
+    "to": [
+        "<telephone_number>"
+    ],
+    "content": "Hello world!", // Required when message type is 0 or 1
+    "scheduleDeliveryTime": "2020-03-30T09:19:00" // Optional
+}
+```
+
+`type` is the message type enum:
+
+- 0: SUBMIT_SM
+- 1: REPLACE_SM
+- 2: QUERY_SM
+- 3: CANCEL_SM
+- 4: DATA_SHORT_MESSAGE
 
 ```java
-// class body omitted
+@RestController
+@RequestMapping("messages")
+public class MessageController {
+    private static final Logger log = LoggerFactory.getLogger(MessageController.class);
+    private final MessageService service;
 
-private Exchange sendTextMessage(ProducerTemplate template, String sourceAddress, //
-        String destinationAddress, String message) {
-    var exchange = ExchangeBuilder.anExchange(context) //
-            .withHeader("CamelSmppDestAddr", List.of(destinationAddress)) //
-            .withHeader("CamelSmppSourceAddr", sourceAddress) //
-            .withPattern(ExchangePattern.InOnly) //
-            .withBody(message).build();
-    // exceptions are not thrown from this method
-    // exceptions are stored in Exchange#setException()
-    return template.send("smpp://{{camel.component.smpp.configuration.host}}", exchange);
-}
+    public MessageController(MessageService service) {
+        this.service = service;
+    }
 
-@Bean
-CommandLineRunner init(ProducerTemplate template) {
-    return args -> {
-        var exchange = sendTextMessage(template, "5432", "<telephone number>", "Hello World!");
-        if (exchange.getException() == null)
-            log.info("Message Id - {}", exchange.getMessage().getHeader("CamelSmppId"));
-        else
-            log.error("Could not send message", exchange.getException());
-    };
+    /**
+     * POST /messages
+     * @param message payload
+     */
+    @PostMapping
+    @ResponseStatus(ACCEPTED)
+    public void sendMessage(@Valid @RequestBody Message message) {
+        log.info("Received {}", message);
+        service.send(message);
+    }
 }
 ```
