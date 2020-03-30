@@ -8,9 +8,9 @@ messages and listens for delivery receipts.
 | Branch        | Purpose                                                       | Url   |
 | ------------- |:-------------------------------------------------------------:| -----:|
 | Master        | Uses CloudHopper SMPP library                                 | [https://github.com/juliuskrah/smpp/](https://github.com/juliuskrah/smpp) |
-| Persistent    | Uses CloupHopper SMPP library and supports extending sessions |   [https://github.com/juliuskrah/smpp/tree/persistent](https://github.com/juliuskrah/smpp/tree/persistent) |
-| Camel         | Uses Camel SMPP Component                                     |    [https://github.com/juliuskrah/smpp/tree/camel](https://github.com/juliuskrah/smpp/tree/camel) |
-| Camel Rest    | Uses Camel SMPP Component and exposes a REST API              |     Coming soon  |
+| Persistent    | Uses CloupHopper SMPP library and supports extending sessions | [https://github.com/juliuskrah/smpp/tree/persistent](https://github.com/juliuskrah/smpp/tree/persistent) |
+| Camel         | Uses Camel SMPP Component                                     | [https://github.com/juliuskrah/smpp/tree/camel](https://github.com/juliuskrah/smpp/tree/camel) |
+| Camel Rest    | Uses Camel SMPP Component and exposes a REST API              | [https://github.com/juliuskrah/smpp/tree/camel-rest](https://github.com/juliuskrah/smpp/tree/camel-rest) |
 
 ## To send an SMS
 
